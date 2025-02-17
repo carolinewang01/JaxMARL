@@ -533,7 +533,6 @@ def make_train(config):
 
 @hydra.main(version_base=None, config_path="config", config_name="mappo_homogenous_rnn_mpe")
 def main(config):
-
     config = OmegaConf.to_container(config)
     wandb.init(
         entity=config["ENTITY"],
@@ -547,6 +546,18 @@ def main(config):
         train_jit = jax.jit(make_train(config)) 
         out = train_jit(rng)
 
+    # print results for each seed:
+    for i in range(config["NUM_SEEDS"]):
+        print("Seed: ", i)
+        print("Mean Return: ", out["metrics"]["returned_episode_returns"][i].mean())
+        print("Std Return: ", out["metrics"]["returned_episode_returns"][i].std())
+    
+    for i in range(config["NUM_SEEDS"]):
+        plt.plot(out["metrics"]["returned_episode_returns"][i].mean(-1).reshape(-1))
+    
+    plt.xlabel("Update Step")
+    plt.ylabel("Return")
+    plt.show()
     
 if __name__=="__main__":
     main()

@@ -9,7 +9,7 @@ from functools import partial
 
 # from gymnax.environments import environment, spaces
 from gymnax.environments.spaces import Box as BoxGymnax, Discrete as DiscreteGymnax
-from typing import Dict, Optional, List, Tuple, Union
+from typing import Dict, Optional, List, Tuple, Union  # noqa: F401
 from jaxmarl.environments.spaces import Box, Discrete, MultiDiscrete
 from jaxmarl.environments.multi_agent_env import MultiAgentEnv, State
 
@@ -94,11 +94,25 @@ class LogWrapper(JaxMARLWrapper):
             returned_episode_lengths=state.returned_episode_lengths * (1 - ep_done)
             + new_episode_length * ep_done,
         )
+
         if self.replace_info:
             info = {}
         info["returned_episode_returns"] = state.returned_episode_returns
         info["returned_episode_lengths"] = state.returned_episode_lengths
         info["returned_episode"] = jnp.full((self._env.num_agents,), ep_done)
+
+        # for compatibility with auto-resetting wrapped envs
+        state = jax.tree.map(
+            lambda x, y: jax.lax.select(ep_done, x, y), 
+            LogEnvState(
+                env_state,
+                jnp.zeros((self._env.num_agents,)),
+                jnp.zeros((self._env.num_agents,)),
+                jnp.zeros((self._env.num_agents,)),
+                jnp.zeros((self._env.num_agents,)),
+            ), 
+            state)
+
         return obs, state, reward, done, info
 
 class MPELogWrapper(LogWrapper):
