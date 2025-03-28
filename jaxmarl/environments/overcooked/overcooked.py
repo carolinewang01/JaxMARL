@@ -38,7 +38,7 @@ class Actions(IntEnum):
     left = 3
     stay = 4
     interact = 5
-    done = 6
+    done = 6 # used only in the interactive mode, to allow the user to manually end the episode
 
 
 @struct.dataclass
@@ -71,6 +71,7 @@ class Overcooked(MultiAgentEnv):
             self,
             layout = FrozenDict(layouts["cramped_room"]),
             random_reset: bool = False,
+            random_obj_state: bool = False, 
             max_steps: int = 400,
     ):
         # Sets self.num_agents to 2
@@ -95,7 +96,8 @@ class Overcooked(MultiAgentEnv):
             Actions.interact,
         ])
 
-        self.random_reset = random_reset
+        self.random_reset = random_reset # controls agent initial positions
+        self.random_obj_state = random_obj_state # controls whether pot state and inventory are randomized
         self.max_steps = max_steps
 
     def step_env(
@@ -132,7 +134,7 @@ class Overcooked(MultiAgentEnv):
             self,
             key: chex.PRNGKey,
     ) -> Tuple[Dict[str, chex.Array], State]:
-        """Reset environment state based on `self.random_reset`
+        """Reset environment state based on `self.random_reset` and `self.random_obj_state`
 
         If True, everything is randomized, including agent inventories and positions, pot states and items on counters
         If False, only resample agent orientations
@@ -142,6 +144,7 @@ class Overcooked(MultiAgentEnv):
 
         # Whether to fully randomize the start state
         random_reset = self.random_reset
+        random_obj_state = self.random_obj_state
         layout = self.layout
 
         h = self.height
@@ -193,7 +196,7 @@ class Overcooked(MultiAgentEnv):
         # Pot status is determined by a number between 0 (inclusive) and 24 (exclusive)
         # 23 corresponds to an empty pot (default)
         pot_status = jax.random.randint(subkey, (pot_idx.shape[0],), 0, 24)
-        pot_status = pot_status * random_reset + (1-random_reset) * jnp.ones((pot_idx.shape[0])) * 23
+        pot_status = pot_status * random_obj_state + (1-random_obj_state) * jnp.ones((pot_idx.shape[0])) * 23
 
         onion_pos = jnp.array([])
         plate_pos = jnp.array([])
@@ -221,8 +224,8 @@ class Overcooked(MultiAgentEnv):
         possible_items = jnp.array([OBJECT_TO_INDEX['empty'], OBJECT_TO_INDEX['onion'],
                           OBJECT_TO_INDEX['plate'], OBJECT_TO_INDEX['dish']])
         random_agent_inv = jax.random.choice(subkey, possible_items, shape=(num_agents,), replace=True)
-        agent_inv = random_reset * random_agent_inv + \
-                    (1-random_reset) * jnp.array([OBJECT_TO_INDEX['empty'], OBJECT_TO_INDEX['empty']])
+        agent_inv = random_obj_state * random_agent_inv + \
+                    (1-random_obj_state) * jnp.array([OBJECT_TO_INDEX['empty'], OBJECT_TO_INDEX['empty']])
 
         state = State(
             agent_pos=agent_pos,
