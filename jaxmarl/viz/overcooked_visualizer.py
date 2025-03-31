@@ -33,7 +33,7 @@ class OvercookedVisualizer:
 		"""Method for rendering the state in a window. Esp. useful for interactive mode."""
 		return self._render_state(agent_view_size, state, highlight, tile_size)
 
-	def animate(self, state_seq, agent_view_size, filename="animation.gif"):
+	def animate(self, state_seq, agent_view_size, filename="animation.gif", duration=0.5):
 		"""Animate a gif give a state sequence and save if to file."""
 		import imageio
 
@@ -53,7 +53,7 @@ class OvercookedVisualizer:
 
 		frame_seq =[get_frame(state) for state in state_seq]
 
-		imageio.mimsave(filename, frame_seq, 'GIF', duration=0.5)
+		imageio.mimsave(filename, frame_seq, 'GIF', duration=duration)
 
 
 	def render_grid(self, grid, tile_size=TILE_PIXELS, k_rot90=0, agent_dir_idx=None):
