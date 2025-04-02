@@ -52,7 +52,7 @@ class ScannedRNN(nn.Module):
         return cell.initialize_carry(jax.random.PRNGKey(0), (batch_size, hidden_size))
 
 
-class ActorCriticRNN(nn.Module):
+class RNNActorCritic(nn.Module):
     action_dim: Sequence[int]
     config: Dict
 
@@ -137,7 +137,7 @@ def make_train(config):
 
     def train(rng):
         # INIT NETWORK
-        network = ActorCriticRNN(env.action_space(env.agents[0]).n, config=config)
+        network = RNNActorCritic(env.action_space(env.agents[0]).n, config=config)
         rng, _rng = jax.random.split(rng)
         init_x = (
             jnp.zeros(
